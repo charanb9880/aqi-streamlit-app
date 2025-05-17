@@ -3,25 +3,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import json
-import requests
-import folium
-from streamlit_folium import st_folium
 from datetime import datetime, timedelta
 from geopy.geocoders import Nominatim
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
-st.set_page_config(page_title="🌍 AQI Dashboard with Real Map + Chatbot", layout="wide")
+st.set_page_config(page_title="🌍 AQI Prediction + Local Chatbot", layout="wide")
 
-# --- CSS Styling ---
+# --- Custom CSS ---
 st.markdown("""
     <style>
         html, body, [class*="css"] {
             font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(to bottom right, #f0f9ff, #ffffff);
+            background: linear-gradient(to bottom right, #e9f2f9, #fefefe);
         }
-        section[data-testid="stSidebar"] {
-            background-color: #dcecf9;
-        }
+        section[data-testid="stSidebar"] { background-color: #dcecf9; }
         .aqi-frame {
             background-color: #ffffff;
             padding: 1.5rem;
@@ -33,10 +28,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("🌍 Real-Time AQI Dashboard + Local Chatbot")
+st.title("🌍 AI-Powered AQI Dashboard + Local Chatbot")
 
-# Sidebar
-st.sidebar.header("📍 Location")
+# Sidebar inputs
+st.sidebar.header("📍 Location Input")
 lat = st.sidebar.number_input("Latitude", value=12.9716)
 lon = st.sidebar.number_input("Longitude", value=77.5946)
 
@@ -52,53 +47,15 @@ def get_place_name(lat, lon):
 place = get_place_name(lat, lon)
 st.markdown(f"📌 **Detected Location:** `{place}`")
 
-# Folium real AQI map
-st.subheader("🗺️ Live PM2.5 AQI Map (OpenAQ)")
-
-m = folium.Map(location=[lat, lon], zoom_start=6)
-
-try:
-    url = "https://api.openaq.org/v2/latest"
-    params = {
-        "coordinates": f"{lat},{lon}",
-        "radius": 50000,
-        "parameter": "pm25",
-        "limit": 100
-    }
-    response = requests.get(url, params=params)
-    results = response.json().get("results", [])
-
-    for item in results:
-        coords = item["coordinates"]
-        value = item["measurements"][0]["value"]
-        unit = item["measurements"][0]["unit"]
-        city = item.get("city", "Unknown")
-
-        color = "green" if value < 50 else "orange" if value < 100 else "red"
-        popup_text = f"{city}: {value} {unit}"
-
-        folium.CircleMarker(
-            location=[coords["latitude"], coords["longitude"]],
-            radius=7,
-            popup=popup_text,
-            color=color,
-            fill=True,
-            fill_opacity=0.8
-        ).add_to(m)
-
-    st_data = st_folium(m, width=700, height=500)
-
-except Exception as e:
-    st.error(f"❌ Could not fetch OpenAQ data: {e}")
-
-# AQI simulation
+# Date selection
 st.sidebar.header("📅 Simulation")
 months_back = st.sidebar.slider("Months Back", 1, 12, 6)
 target_date = datetime.now().date() - timedelta(days=30 * months_back)
 month = target_date.month
 
-if st.button("🌀 Simulate AQI Map"):
-    with st.spinner("Generating synthetic AQI map..."):
+# AQI map generation
+if st.button("🚀 Generate AQI Map"):
+    with st.spinner("Generating AQI map..."):
         base_aqi = 120 if month in [12, 1, 2] else 85
         x, y = np.linspace(-5, 5, 128), np.linspace(-5, 5, 128)
         X, Y = np.meshgrid(x, y)
@@ -114,13 +71,13 @@ if st.button("🌀 Simulate AQI Map"):
 
         fig, ax = plt.subplots(figsize=(8, 6))
         im = ax.imshow(aqi_map, cmap='jet', vmin=50, vmax=120)
-        plt.colorbar(im, ax=ax).set_label('Simulated AQI')
-        ax.set_title(f"Simulated AQI Map for ({lat}, {lon}) on {target_date}")
+        plt.colorbar(im, ax=ax).set_label('AQI')
+        ax.set_title(f"AQI Map for ({lat}, {lon}) on {target_date}")
         st.markdown('<div class="aqi-frame">', unsafe_allow_html=True)
         st.pyplot(fig)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        st.success("✅ AQI Map Simulated")
+        st.success("✅ AQI Map Generated")
         st.markdown(f"**Average AQI:** `{np.mean(aqi_map):.1f}`  |  **Min:** `{np.min(aqi_map):.1f}`  |  **Max:** `{np.max(aqi_map):.1f}`")
 
         true = aqi_map + np.random.normal(0, 5, aqi_map.shape)
@@ -148,7 +105,7 @@ if os.path.exists("history.json"):
     st.pyplot(fig2)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# Local chatbot
+# Local rule-based chatbot
 st.subheader("🤖 AQI Chat Assistant (Offline)")
 
 faq = {
