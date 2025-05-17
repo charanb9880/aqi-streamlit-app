@@ -134,4 +134,4 @@ if prompt := st.chat_input("Ask me about AQI..."):
             break
 
     st.chat_message("assistant").markdown(reply)
-    st.session_state.messages.append({"role": "assistant", "content": reply})   reduce the gap between the vs plots to show machine is efficient
+    st.session_state.messages.append({"role": "assistant", "content": reply}) 
