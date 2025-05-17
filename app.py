@@ -24,7 +24,7 @@ axs[1].plot(ep, train_mae, label="Train MAE", marker='o', color='orange')
 axs[1].plot(ep, val_mae, label="Val MAE", marker='x', color='red')
 axs[1].set_ylim([0, max(val_mae) * 1.05])
 axs[1].set_title("MAE (Smoothed)")
-axs[1].legend(); axs[1].grid(True
+axs[1].legend(); axs[1].grid(True)
 # --- Custom CSS ---
 st.markdown("""
     <style>
