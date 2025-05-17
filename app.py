@@ -113,8 +113,31 @@ faq = {
     "what is a good aqi": "AQI below 50 is considered good and safe for health.",
     "what causes air pollution": "Common causes include vehicle emissions, industrial smoke, dust, and burning fuels.",
     "what is pm2.5": "PM2.5 refers to fine particulate matter smaller than 2.5 microns, harmful to lungs and heart.",
-    "how is aqi calculated": "AQI is calculated based on pollutants like PM2.5, PM10, NO2, CO, SO2, and O3.",
+    "what is pm10": "PM10 includes particles up to 10 microns in diameter, such as dust, pollen, and mold.",
+    "how is aqi calculated": "AQI is calculated based on the concentration of pollutants like PM2.5, PM10, NO2, CO, SO2, and O3.",
+    "what is no2": "NO2 (Nitrogen Dioxide) is a gas from vehicles and industrial activity that causes lung irritation.",
+    "what is o3": "Ground-level ozone (O3) forms when pollutants react in sunlight; it causes chest pain and throat irritation.",
+    "what is co": "CO (Carbon Monoxide) is a colorless, odorless gas from incomplete combustion; it’s harmful when inhaled.",
+    "what is so2": "SO2 (Sulfur Dioxide) is released when coal and oil are burned, contributing to smog and acid rain.",
+    "how can i reduce air pollution": "Use public transport, switch to clean energy, avoid burning waste, and plant trees.",
+    "is aqi above 100 safe": "AQI above 100 is unsafe for sensitive groups. Over 150 is unhealthy for everyone.",
+    "what is hazardous aqi": "AQI over 300 is hazardous. People are advised to stay indoors and avoid outdoor exertion.",
+    "can air purifiers help": "Yes, HEPA air purifiers can reduce indoor PM2.5 and improve air quality indoors.",
+    "can i go outside today": "Check current AQI levels. If it's over 150, avoid outdoor exercise, especially if you're sensitive.",
+    "what is smog": "Smog is a mix of air pollutants like ozone, particulate matter, and smoke, usually trapped by weather.",
+    "how does weather affect air quality": "Low wind, high pressure, and cold temperatures can trap pollutants near the surface.",
+    "how often is aqi updated": "AQI from most stations is updated hourly based on the latest pollutant readings.",
+    "what apps show real-time aqi": "You can use apps like IQAir, AirVisual, AQICN, or OpenAQ for live AQI data.",
+    "which pollutant is most dangerous": "PM2.5 is considered the most harmful due to its ability to penetrate deep into lungs."
+        "why is co2 not part of aqi": (
+        "CO₂ (Carbon Dioxide) is not part of AQI because it's not directly toxic at ambient levels. "
+        "Unlike PM2.5 or NO₂, CO₂ does not cause acute respiratory effects in outdoor air. "
+        "It's a greenhouse gas linked to climate change rather than immediate air quality health concerns. "
+        "AQI focuses on pollutants that affect human health in the short term, like particulate matter and ozone."
+    )
+
 }
+
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
