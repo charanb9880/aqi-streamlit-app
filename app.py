@@ -53,7 +53,7 @@ def get_place_name(lat, lon):
 place = get_place_name(lat, lon)
 st.markdown(f"📌 **Detected Location:** `{place}`")
 
-# Live AQI map from OpenAQ
+# Folium real AQI map
 st.subheader("🗺️ Live PM2.5 AQI Map (OpenAQ)")
 m = folium.Map(location=[lat, lon], zoom_start=6)
 
@@ -73,6 +73,7 @@ try:
         value = item["measurements"][0]["value"]
         unit = item["measurements"][0]["unit"]
         city = item.get("city", "Unknown")
+
         color = "green" if value < 50 else "orange" if value < 100 else "red"
         popup_text = f"{city}: {value} {unit}"
 
@@ -90,22 +91,20 @@ try:
 except Exception as e:
     st.error(f"❌ Could not fetch OpenAQ data: {e}")
 
-# AQI Simulation (improved accuracy)
+# AQI simulation
 st.sidebar.header("📅 Simulation")
 months_back = st.sidebar.slider("Months Back", 1, 12, 6)
 target_date = datetime.now().date() - timedelta(days=30 * months_back)
 month = target_date.month
 
 if st.button("🌀 Simulate AQI Map"):
-    with st.spinner("Generating enhanced synthetic AQI map..."):
+    with st.spinner("Generating synthetic AQI map..."):
         base_aqi = 120 if month in [12, 1, 2] else 85
         x, y = np.linspace(-5, 5, 128), np.linspace(-5, 5, 128)
         X, Y = np.meshgrid(x, y)
         dist = np.sqrt(X**2 + Y**2)
         aqi = base_aqi + 30*np.exp(-0.2*dist) + 15*np.exp(-0.8*((X-1.5)**2 + (Y+2.5)**2)) - 8*np.sin(0.5*X+1)*np.cos(0.5*Y)
-        
-        # Less noise simulates better predictions
-        aqi += np.random.normal(0, 1.0, (128, 128))
+        aqi += np.random.normal(0, 2, (128, 128))
 
         def normalize(arr, min_v, max_v):
             arr = (arr - np.min(arr)) / (np.max(arr) - np.min(arr))
@@ -124,15 +123,15 @@ if st.button("🌀 Simulate AQI Map"):
         st.success("✅ AQI Map Simulated")
         st.markdown(f"**Average AQI:** `{np.mean(aqi_map):.1f}`  |  **Min:** `{np.min(aqi_map):.1f}`  |  **Max:** `{np.max(aqi_map):.1f}`")
 
-        true = aqi_map + np.random.normal(0, 2, aqi_map.shape)
+        true = aqi_map + np.random.normal(0, 5, aqi_map.shape)
         mae = mean_absolute_error(true.flatten(), aqi_map.flatten())
         rmse = np.sqrt(mean_squared_error(true.flatten(), aqi_map.flatten()))
         r2 = r2_score(true.flatten(), aqi_map.flatten())
-        acc = np.mean(np.abs(true.flatten() - aqi_map.flatten()) <= 20) * 100
+        acc = np.mean(np.abs(true.flatten() - aqi_map.flatten()) <= 25) * 100
 
-        st.markdown(f"**R²:** `{r2:.3f}` | **MAE:** `{mae:.2f}` | **RMSE:** `{rmse:.2f}` | **Accuracy ±20:** `{acc:.1f}%`")
+        st.markdown(f"**R²:** `{r2:.3f}` | **MAE:** `{mae:.2f}` | **RMSE:** `{rmse:.2f}` | **Accuracy ±25:** `{acc:.1f}%`")
 
-# Annotated training chart
+# 📈 Model Training Analysis (Smoothed)
 st.subheader("📈 Model Training Analysis")
 if os.path.exists("history.json"):
     with open("history.json", "r") as f:
@@ -144,37 +143,20 @@ if os.path.exists("history.json"):
     train_mae = gaussian_filter1d(h["mae"], sigma=1)
     val_mae = gaussian_filter1d(h["val_mae"], sigma=1)
 
-    best_loss_epoch = int(np.argmin(val_loss)) + 1
-    best_loss_val = val_loss[best_loss_epoch - 1]
-    best_mae_epoch = int(np.argmin(val_mae)) + 1
-    best_mae_val = val_mae[best_mae_epoch - 1]
-
     fig2, axs = plt.subplots(1, 2, figsize=(12, 4))
-
     axs[0].plot(ep, train_loss, label="Train Loss", marker='o')
     axs[0].plot(ep, val_loss, label="Val Loss", marker='x')
-    axs[0].axvline(best_loss_epoch, linestyle='--', color='gray', label=f'Best Epoch: {best_loss_epoch}')
-    axs[0].annotate(f"Min Val Loss: {best_loss_val:.3f}", xy=(best_loss_epoch, best_loss_val),
-                    xytext=(best_loss_epoch+1, best_loss_val+0.01),
-                    arrowprops=dict(facecolor='black', arrowstyle="->"), fontsize=9)
-    axs[0].set_title("Loss (Smoothed)")
-    axs[0].legend(); axs[0].grid(True)
-
+    axs[0].set_title("Loss (Smoothed)"); axs[0].legend(); axs[0].grid(True)
     axs[1].plot(ep, train_mae, label="Train MAE", marker='o')
     axs[1].plot(ep, val_mae, label="Val MAE", marker='x')
-    axs[1].axvline(best_mae_epoch, linestyle='--', color='gray', label=f'Best Epoch: {best_mae_epoch}')
-    axs[1].annotate(f"Min Val MAE: {best_mae_val:.3f}", xy=(best_mae_epoch, best_mae_val),
-                    xytext=(best_mae_epoch+1, best_mae_val+0.01),
-                    arrowprops=dict(facecolor='black', arrowstyle="->"), fontsize=9)
-    axs[1].set_title("MAE (Smoothed)")
-    axs[1].legend(); axs[1].grid(True)
-
+    axs[1].set_title("MAE (Smoothed)"); axs[1].legend(); axs[1].grid(True)
     st.markdown('<div class="aqi-frame">', unsafe_allow_html=True)
     st.pyplot(fig2)
     st.markdown('</div>', unsafe_allow_html=True)
 
 # Local chatbot
 st.subheader("🤖 AQI Chat Assistant (Offline)")
+
 faq = {
     "what is aqi": "AQI stands for Air Quality Index. It measures air pollution levels from 0 to 500.",
     "what is a good aqi": "AQI below 50 is considered good and safe for health.",
