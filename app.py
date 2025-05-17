@@ -6,9 +6,25 @@ import json
 from datetime import datetime, timedelta
 from geopy.geocoders import Nominatim
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-
+from scipy.ndimage import gaussian_filter1d
 st.set_page_config(page_title="🌍 AQI Prediction + Local Chatbot", layout="wide")
+train_loss = gaussian_filter1d(h["loss"], sigma=1)
+val_loss = gaussian_filter1d(h["val_loss"], sigma=1)
+train_mae = gaussian_filter1d(h["mae"], sigma=1)
+val_mae = gaussian_filter1d(h["val_mae"], sigma=1)
 
+fig2, axs = plt.subplots(1, 2, figsize=(12, 4))
+axs[0].plot(ep, train_loss, label="Train Loss", marker='o', color='blue')
+axs[0].plot(ep, val_loss, label="Val Loss", marker='x', color='green')
+axs[0].set_ylim([0, max(val_loss) * 1.05])
+axs[0].set_title("Loss (Smoothed)")
+axs[0].legend(); axs[0].grid(True)
+
+axs[1].plot(ep, train_mae, label="Train MAE", marker='o', color='orange')
+axs[1].plot(ep, val_mae, label="Val MAE", marker='x', color='red')
+axs[1].set_ylim([0, max(val_mae) * 1.05])
+axs[1].set_title("MAE (Smoothed)")
+axs[1].legend(); axs[1].grid(True
 # --- Custom CSS ---
 st.markdown("""
     <style>
