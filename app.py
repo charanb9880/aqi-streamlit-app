@@ -4,8 +4,6 @@ import matplotlib.pyplot as plt
 import os
 import json
 import requests
-import folium
-from streamlit_folium import st_folium
 from datetime import datetime, timedelta
 from geopy.geocoders import Nominatim
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
@@ -33,7 +31,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("🌍 Real-Time AQI Dashboard + Chatbot")
+st.title("🌍 AQI Dashboard (No Folium) + Chatbot")
 
 st.sidebar.header("📍 Location")
 lat = st.sidebar.number_input("Latitude", value=12.9716)
@@ -50,62 +48,27 @@ def get_place_name(lat, lon):
 place = get_place_name(lat, lon)
 st.markdown(f"📌 **Detected Location:** `{place}`")
 
-st.subheader("🗺️ Live AQI Map by Pollutant (with Layer Control)")
-m = folium.Map(location=[lat, lon], zoom_start=6)
+# Built-in Streamlit Map
+st.subheader("📍 Nearby AQI Stations (Streamlit Map)")
 
-folium.Marker(
-    location=[lat, lon],
-    popup="Your Location",
-    tooltip="You are here",
-    icon=folium.Icon(color="black", icon="user", prefix="fa")
-).add_to(m)
 try:
     url = "https://api.openaq.org/v2/latest"
-    params = {
-        "coordinates": f"{lat},{lon}",
-        "radius": 50000,
-        "limit": 200
-    }
+    params = {"coordinates": f"{lat},{lon}", "radius": 50000, "limit": 100}
     response = requests.get(url, params=params)
     results = response.json().get("results", [])
 
-    layers = {}
-    color_map = {
-        "pm25": "red", "pm10": "orange", "no2": "blue",
-        "co": "purple", "o3": "green", "so2": "darkgreen"
-    }
+    st.map({
+        "lat": [r["coordinates"]["latitude"] for r in results],
+        "lon": [r["coordinates"]["longitude"] for r in results]
+    })
 
-    for item in results:
-        coords = item["coordinates"]
-        city = item.get("city", "Unknown")
-        lat_val = coords["latitude"]
-        lon_val = coords["longitude"]
-
-        for m in item["measurements"]:
-            p = m["parameter"].lower()
-            v = m["value"]
-            u = m["unit"]
-            popup_text = f"<b>{p.upper()}</b><br><b>Value:</b> {v} {u}<br><b>City:</b> {city}<br><b>Coords:</b> {lat_val:.2f}, {lon_val:.2f}"
-
-            if p not in layers:
-                layers[p] = folium.FeatureGroup(name=p.upper(), show=True)
-                m.add_child(layers[p])
-
-            folium.CircleMarker(
-                location=[lat_val, lon_val],
-                radius=8,
-                popup=folium.Popup(popup_text, max_width=250),
-                tooltip=f"{p.upper()} - {v} {u}",
-                color=color_map.get(p, "gray"),
-                fill=True,
-                fill_opacity=0.85
-            ).add_to(layers[p])
-
-    folium.LayerControl().add_to(m)
-    st_data = st_folium(m, width=700, height=500)
+    for station in results:
+        st.markdown(f"**{station.get('city', 'Unknown')}**:")
+        for m in station["measurements"]:
+            st.markdown(f"- `{m['parameter'].upper()}`: {m['value']} {m['unit']}")
 
 except Exception as e:
-    st.error(f"❌ Could not fetch OpenAQ data: {e}")
+    st.warning(f"Could not fetch OpenAQ data: {e}")
 
 # AQI Simulation
 st.sidebar.header("📅 Simulation")
@@ -137,7 +100,7 @@ if st.button("🌀 Simulate AQI Map"):
         st.markdown('</div>', unsafe_allow_html=True)
 
         st.success("✅ AQI Map Simulated")
-        st.markdown(f"**Average AQI:** `{np.mean(aqi_map):.1f}`  |  **Min:** `{np.min(aqi_map):.1f}`  |  **Max:** `{np.max(aqi_map):.1f}`")
+        st.markdown(f"**Average AQI:** `{np.mean(aqi_map):.1f}` | **Min:** `{np.min(aqi_map):.1f}` | **Max:** `{np.max(aqi_map):.1f}`")
 
         true = aqi_map + np.random.normal(0, 2, aqi_map.shape)
         mae = mean_absolute_error(true.flatten(), aqi_map.flatten())
@@ -146,10 +109,9 @@ if st.button("🌀 Simulate AQI Map"):
         acc = np.mean(np.abs(true.flatten() - aqi_map.flatten()) <= 20) * 100
 
         st.markdown(f"**R²:** `{r2:.3f}` | **MAE:** `{mae:.2f}` | **RMSE:** `{rmse:.2f}` | **Accuracy ±20:** `{acc:.1f}%`")
-# 📈 Model Training Analysis (Loss & MAE aligned to x-axis)
-# 📈 Model Training Analysis (clean & professional look)
-st.subheader("📈 Model Training Analysis")
 
+# Training Plots
+st.subheader("📈 Model Training Analysis")
 if os.path.exists("history.json"):
     with open("history.json", "r") as f:
         h = json.load(f)
@@ -161,29 +123,24 @@ if os.path.exists("history.json"):
     val_mae = gaussian_filter1d(h["val_mae"], sigma=1)
 
     fig2, axs = plt.subplots(1, 2, figsize=(12, 4))
-
     axs[0].plot(ep, train_loss, label="Train Loss", color="dodgerblue", linewidth=2)
     axs[0].plot(ep, val_loss, label="Val Loss", color="darkorange", linewidth=2)
     axs[0].set_title("Loss")
     axs[0].set_xlabel("Epochs")
     axs[0].set_ylabel("Loss")
-    axs[0].legend()
-    axs[0].grid(True)
+    axs[0].legend(); axs[0].grid(True)
 
     axs[1].plot(ep, train_mae, label="Train MAE", color="dodgerblue", linewidth=2)
     axs[1].plot(ep, val_mae, label="Val MAE", color="darkorange", linewidth=2)
     axs[1].set_title("Mean Absolute Error")
     axs[1].set_xlabel("Epochs")
     axs[1].set_ylabel("MAE")
-    axs[1].legend()
-    axs[1].grid(True)
-
+    axs[1].legend(); axs[1].grid(True)
     st.markdown('<div class="aqi-frame">', unsafe_allow_html=True)
     st.pyplot(fig2)
     st.markdown('</div>', unsafe_allow_html=True)
 
-
-# 🤖 Offline AQI Chatbot
+# Chatbot
 st.subheader("🤖 AQI Chat Assistant (Offline)")
 
 faq = {
@@ -192,13 +149,6 @@ faq = {
     "what causes air pollution": "Common causes include vehicle emissions, industrial smoke, dust, and burning fuels.",
     "what is pm2.5": "PM2.5 refers to fine particulate matter smaller than 2.5 microns, harmful to lungs and heart.",
     "how is aqi calculated": "AQI is calculated based on pollutants like PM2.5, PM10, NO2, CO, SO2, and O3.",
-    "what is pm10": "PM10 includes particles up to 10 microns in size, such as dust, pollen, and mold.",
-    "what is no2": "NO2 is a toxic gas from vehicles and industries that can irritate the lungs.",
-    "what is o3": "Ground-level ozone (O3) is a harmful pollutant formed from emissions + sunlight.",
-    "what is co": "Carbon Monoxide (CO) is a deadly gas produced by burning fuel without oxygen.",
-    "what is so2": "SO2 is released when fossil fuels are burned; it causes breathing issues.",
-    "can i exercise when aqi is high": "Avoid outdoor activity when AQI > 150. It's risky for lungs.",
-    "how often is aqi updated": "Most stations update AQI every hour.",
 }
 
 if "messages" not in st.session_state:
