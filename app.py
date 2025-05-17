@@ -147,7 +147,9 @@ if st.button("🌀 Simulate AQI Map"):
 
         st.markdown(f"**R²:** `{r2:.3f}` | **MAE:** `{mae:.2f}` | **RMSE:** `{rmse:.2f}` | **Accuracy ±20:** `{acc:.1f}%`")
 # 📈 Model Training Analysis (Loss & MAE aligned to x-axis)
+# 📈 Model Training Analysis (clean & professional look)
 st.subheader("📈 Model Training Analysis")
+
 if os.path.exists("history.json"):
     with open("history.json", "r") as f:
         h = json.load(f)
@@ -158,43 +160,28 @@ if os.path.exists("history.json"):
     train_mae = gaussian_filter1d(h["mae"], sigma=1)
     val_mae = gaussian_filter1d(h["val_mae"], sigma=1)
 
-    best_loss_epoch = int(np.argmin(val_loss)) + 1
-    best_loss_val = val_loss[best_loss_epoch - 1]
-    best_mae_epoch = int(np.argmin(val_mae)) + 1
-    best_mae_val = val_mae[best_mae_epoch - 1]
+    fig2, axs = plt.subplots(1, 2, figsize=(12, 4))
 
-    fig2, axs = plt.subplots(1, 2, figsize=(14, 4), constrained_layout=True)
-
-    loss_ylim = [0, max(val_loss) * 1.01]
-    mae_ylim = [0, max(val_mae) * 1.01]
-
-    axs[0].plot(ep, train_loss, label="Train Loss", marker='o')
-    axs[0].plot(ep, val_loss, label="Val Loss", marker='x')
-    axs[0].axvline(best_loss_epoch, linestyle='--', color='gray', label=f'Best Epoch: {best_loss_epoch}')
-    axs[0].annotate(f"Min Val Loss: {best_loss_val:.3f}", xy=(best_loss_epoch, best_loss_val),
-                    xytext=(best_loss_epoch + 1, best_loss_val + 0.01),
-                    arrowprops=dict(facecolor='black', arrowstyle="->"), fontsize=9)
-    axs[0].set_title("Loss (Smoothed)")
-    axs[0].set_xlabel("Epoch")
+    axs[0].plot(ep, train_loss, label="Train Loss", color="dodgerblue", linewidth=2)
+    axs[0].plot(ep, val_loss, label="Val Loss", color="darkorange", linewidth=2)
+    axs[0].set_title("Loss")
+    axs[0].set_xlabel("Epochs")
     axs[0].set_ylabel("Loss")
-    axs[0].set_ylim(loss_ylim)
-    axs[0].legend(); axs[0].grid(True)
+    axs[0].legend()
+    axs[0].grid(True)
 
-    axs[1].plot(ep, train_mae, label="Train MAE", marker='o')
-    axs[1].plot(ep, val_mae, label="Val MAE", marker='x')
-    axs[1].axvline(best_mae_epoch, linestyle='--', color='gray', label=f'Best Epoch: {best_mae_epoch}')
-    axs[1].annotate(f"Min Val MAE: {best_mae_val:.3f}", xy=(best_mae_epoch, best_mae_val),
-                    xytext=(best_mae_epoch + 1, best_mae_val + 0.01),
-                    arrowprops=dict(facecolor='black', arrowstyle="->"), fontsize=9)
-    axs[1].set_title("MAE (Smoothed)")
-    axs[1].set_xlabel("Epoch")
-    axs[1].set_ylabel("Mean Absolute Error")
-    axs[1].set_ylim(mae_ylim)
-    axs[1].legend(); axs[1].grid(True)
+    axs[1].plot(ep, train_mae, label="Train MAE", color="dodgerblue", linewidth=2)
+    axs[1].plot(ep, val_mae, label="Val MAE", color="darkorange", linewidth=2)
+    axs[1].set_title("Mean Absolute Error")
+    axs[1].set_xlabel("Epochs")
+    axs[1].set_ylabel("MAE")
+    axs[1].legend()
+    axs[1].grid(True)
 
     st.markdown('<div class="aqi-frame">', unsafe_allow_html=True)
     st.pyplot(fig2)
     st.markdown('</div>', unsafe_allow_html=True)
+
 
 # 🤖 Offline AQI Chatbot
 st.subheader("🤖 AQI Chat Assistant (Offline)")
