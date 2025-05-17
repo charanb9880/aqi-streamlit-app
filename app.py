@@ -9,7 +9,6 @@ from streamlit_folium import st_folium
 from datetime import datetime, timedelta
 from geopy.geocoders import Nominatim
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-from scipy.ndimage import gaussian_filter1d
 
 st.set_page_config(page_title="🌍 AQI Dashboard with Real Map + Chatbot", layout="wide")
 
@@ -55,6 +54,7 @@ st.markdown(f"📌 **Detected Location:** `{place}`")
 
 # Folium real AQI map
 st.subheader("🗺️ Live PM2.5 AQI Map (OpenAQ)")
+
 m = folium.Map(location=[lat, lon], zoom_start=6)
 
 try:
@@ -131,25 +131,19 @@ if st.button("🌀 Simulate AQI Map"):
 
         st.markdown(f"**R²:** `{r2:.3f}` | **MAE:** `{mae:.2f}` | **RMSE:** `{rmse:.2f}` | **Accuracy ±25:** `{acc:.1f}%`")
 
-# 📈 Model Training Analysis (Smoothed)
+# Training analysis
 st.subheader("📈 Model Training Analysis")
 if os.path.exists("history.json"):
     with open("history.json", "r") as f:
         h = json.load(f)
-
     ep = list(range(1, len(h["loss"]) + 1))
-    train_loss = gaussian_filter1d(h["loss"], sigma=1)
-    val_loss = gaussian_filter1d(h["val_loss"], sigma=1)
-    train_mae = gaussian_filter1d(h["mae"], sigma=1)
-    val_mae = gaussian_filter1d(h["val_mae"], sigma=1)
-
     fig2, axs = plt.subplots(1, 2, figsize=(12, 4))
-    axs[0].plot(ep, train_loss, label="Train Loss", marker='o')
-    axs[0].plot(ep, val_loss, label="Val Loss", marker='x')
-    axs[0].set_title("Loss (Smoothed)"); axs[0].legend(); axs[0].grid(True)
-    axs[1].plot(ep, train_mae, label="Train MAE", marker='o')
-    axs[1].plot(ep, val_mae, label="Val MAE", marker='x')
-    axs[1].set_title("MAE (Smoothed)"); axs[1].legend(); axs[1].grid(True)
+    axs[0].plot(ep, h["loss"], label="Train Loss", marker='o')
+    axs[0].plot(ep, h["val_loss"], label="Val Loss", marker='x')
+    axs[0].legend(); axs[0].grid(); axs[0].set_title("Loss")
+    axs[1].plot(ep, h["mae"], label="Train MAE", marker='o')
+    axs[1].plot(ep, h["val_mae"], label="Val MAE", marker='x')
+    axs[1].legend(); axs[1].grid(); axs[1].set_title("MAE")
     st.markdown('<div class="aqi-frame">', unsafe_allow_html=True)
     st.pyplot(fig2)
     st.markdown('</div>', unsafe_allow_html=True)
