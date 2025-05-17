@@ -41,7 +41,6 @@ st.sidebar.header("📍 Location")
 lat = st.sidebar.number_input("Latitude", value=12.9716)
 lon = st.sidebar.number_input("Longitude", value=77.5946)
 
-# Get readable place name
 def get_place_name(lat, lon):
     try:
         geolocator = Nominatim(user_agent="aqi_app")
@@ -57,7 +56,6 @@ st.markdown(f"📌 **Detected Location:** `{place}`")
 st.subheader("🗺️ Live AQI Map by Pollutant (with Layer Control)")
 m = folium.Map(location=[lat, lon], zoom_start=6)
 
-# Add user location
 folium.Marker(
     location=[lat, lon],
     popup="Your Location",
@@ -113,7 +111,7 @@ try:
 except Exception as e:
     st.error(f"❌ Could not fetch OpenAQ data: {e}")
 
-# 🔄 AQI simulation
+# 🔄 AQI Simulation
 st.sidebar.header("📅 Simulation")
 months_back = st.sidebar.slider("Months Back", 1, 12, 6)
 target_date = datetime.now().date() - timedelta(days=30 * months_back)
@@ -153,7 +151,7 @@ if st.button("🌀 Simulate AQI Map"):
 
         st.markdown(f"**R²:** `{r2:.3f}` | **MAE:** `{mae:.2f}` | **RMSE:** `{rmse:.2f}` | **Accuracy ±20:** `{acc:.1f}%`")
 
-# 📈 Model Training Analysis (aligned to x-axis)
+# 📈 Model Training Analysis (aligned plots)
 st.subheader("📈 Model Training Analysis")
 if os.path.exists("history.json"):
     with open("history.json", "r") as f:
@@ -172,8 +170,8 @@ if os.path.exists("history.json"):
 
     fig2, axs = plt.subplots(1, 2, figsize=(14, 4), constrained_layout=True)
 
-    loss_ylim = [0, max(max(train_loss), max(val_loss)) * 1.05]
-    mae_ylim = [0, max(max(train_mae), max(val_mae)) * 1.05]
+    loss_ylim = [0, max(max(train_loss), max(val_loss)) * 1.1]
+    mae_ylim = [0, max(max(train_mae), max(val_mae)) * 1.1]
 
     axs[0].plot(ep, train_loss, label="Train Loss", marker='o')
     axs[0].plot(ep, val_loss, label="Val Loss", marker='x')
@@ -203,8 +201,9 @@ if os.path.exists("history.json"):
     st.pyplot(fig2)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# 🤖 Local Chatbot
+# 🤖 Chatbot
 st.subheader("🤖 AQI Chat Assistant (Offline)")
+
 faq = {
     "what is aqi": "AQI stands for Air Quality Index. It measures air pollution levels from 0 to 500.",
     "what is a good aqi": "AQI below 50 is considered good and safe for health.",
